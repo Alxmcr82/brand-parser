@@ -44,24 +44,26 @@ VK_TOKEN = os.environ.get("VK_TOKEN", "")
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 MAX_BOT_TOKEN = os.environ.get("MAX_BOT_TOKEN", "")
 
+_P = r"(?:https?:)?//"  # matches https://, http://, and protocol-relative //
+
 SOCIAL_PATTERNS = {
-    "Instagram":   r"https?://(?:www\.)?instagram\.com/[a-zA-Z0-9_.]+",
-    "Facebook":    r"https?://(?:www\.)?facebook\.com/[a-zA-Z0-9_.]+",
-    "Twitter / X": r"https?://(?:www\.)?(?:twitter|x)\.com/[a-zA-Z0-9_]+",
-    "LinkedIn":    r"https?://(?:www\.)?linkedin\.com/(?:company|in)/[a-zA-Z0-9_-]+",
-    "YouTube":     r"https?://(?:www\.)?youtube\.com/(?:@|channel/|user/)[a-zA-Z0-9_-]+",
-    "TikTok":      r"https?://(?:www\.)?tiktok\.com/@[a-zA-Z0-9_.]+",
-    "Pinterest":   r"https?://(?:www\.)?pinterest\.(?:com|ru)/[a-zA-Z0-9_]+",
-    "Telegram":    r"https?://t\.me/[a-zA-Z0-9_]+",
-    "VK":          r"https?://(?:www\.)?vk\.(?:com|ru)/[a-zA-Z0-9_]+",
-    "Max":         r"https?://(?:www\.)?max\.ru/[a-zA-Z0-9_]+",
-    "WhatsApp":    r"https?://wa\.me/[0-9]+",
-    "Behance":     r"https?://(?:www\.)?behance\.net/[a-zA-Z0-9_]+",
-    "Dribbble":    r"https?://(?:www\.)?dribbble\.com/[a-zA-Z0-9_]+",
-    "GitHub":      r"https?://(?:www\.)?github\.com/[a-zA-Z0-9_-]+",
-    "Dzen":        r"https?://(?:www\.)?dzen\.ru/(?:t/)?[a-zA-Z0-9_.-]+",
-    "Rutube":      r"https?://(?:www\.)?rutube\.ru/(?:channel/|u/)[a-zA-Z0-9_-]+",
-    "OK":          r"https?://(?:www\.)?ok\.ru/[a-zA-Z0-9_.]+",
+    "Instagram":   _P + r"(?:www\.)?instagram\.com/[a-zA-Z0-9_.]+",
+    "Facebook":    _P + r"(?:www\.)?facebook\.com/[a-zA-Z0-9_.]+",
+    "Twitter / X": _P + r"(?:www\.)?(?:twitter|x)\.com/[a-zA-Z0-9_]+",
+    "LinkedIn":    _P + r"(?:www\.)?linkedin\.com/(?:company|in)/[a-zA-Z0-9_-]+",
+    "YouTube":     _P + r"(?:www\.)?youtube\.com/(?:@|channel/|user/)[a-zA-Z0-9_-]+",
+    "TikTok":      _P + r"(?:www\.)?tiktok\.com/@[a-zA-Z0-9_.]+",
+    "Pinterest":   _P + r"(?:www\.)?pinterest\.(?:com|ru)/[a-zA-Z0-9_]+",
+    "Telegram":    _P + r"t\.me/[a-zA-Z0-9_]+",
+    "VK":          _P + r"(?:www\.)?vk\.(?:com|ru)/[a-zA-Z0-9_]+",
+    "Max":         _P + r"(?:www\.)?max\.ru/[a-zA-Z0-9_]+",
+    "WhatsApp":    _P + r"wa\.me/[0-9]+",
+    "Behance":     _P + r"(?:www\.)?behance\.net/[a-zA-Z0-9_]+",
+    "Dribbble":    _P + r"(?:www\.)?dribbble\.com/[a-zA-Z0-9_]+",
+    "GitHub":      _P + r"(?:www\.)?github\.com/[a-zA-Z0-9_-]+",
+    "Dzen":        _P + r"(?:www\.)?dzen\.ru/(?:t/)?[a-zA-Z0-9_.-]+",
+    "Rutube":      _P + r"(?:www\.)?rutube\.ru/(?:channel/|u/)[a-zA-Z0-9_-]+",
+    "OK":          _P + r"(?:www\.)?ok\.ru/[a-zA-Z0-9_.]+",
 }
 
 
@@ -98,6 +100,8 @@ def extract_socials_regex(html: str) -> list[SocialLink]:
         matches = re.findall(pattern, html, re.IGNORECASE)
         for m in matches:
             url = m.rstrip("/")
+            if url.startswith("//"):
+                url = "https:" + url
             if url.lower() not in seen_urls and not _SOCIAL_BLACKLIST.search(url):
                 seen_urls.add(url.lower())
                 found.append(SocialLink(platform=platform, url=url))
