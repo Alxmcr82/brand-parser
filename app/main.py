@@ -281,6 +281,23 @@ def _find_subscribers_in_dzen(obj) -> Optional[int]:
     return None
 
 
+async def fetch_rutube_followers(slug: str) -> Optional[int]:
+    """Fetch subscriber count from Rutube channel page."""
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
+            resp = await client.get(
+                f"https://rutube.ru/u/{slug}/",
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
+            html = resp.text
+        m = re.search(r'"subscribers_count"\s*:\s*(\d+)', html)
+        if m:
+            return int(m.group(1))
+    except Exception:
+        pass
+    return None
+
+
 async def fetch_ok_followers(slug: str) -> Optional[int]:
     """Fetch member count from OK (Odnoklassniki) page."""
     try:
@@ -310,6 +327,9 @@ def _extract_slug(url: str, platform: str) -> str:
         # https://dzen.ru/name or https://dzen.ru/t/name
         m = re.search(r"dzen\.ru/((?:t/)?[a-zA-Z0-9_.-]+)", url)
         return m.group(1) if m else ""
+    if platform == "Rutube":
+        # https://rutube.ru/u/name/ or https://rutube.ru/channel/ID/
+        return url.split("/")[-1] or url.split("/")[-2]
     # For VK, Telegram — last path segment
     return url.split("/")[-1]
 
@@ -339,6 +359,10 @@ async def enrich_with_followers(socials: list[SocialLink]) -> list[SocialLink]:
             async def _ok(sl=slug):
                 return {"followers": await fetch_ok_followers(sl), "is_bot": None}
             tasks.append((s, _ok()))
+        elif s.platform == "Rutube" and slug:
+            async def _rutube(sl=slug):
+                return {"followers": await fetch_rutube_followers(sl), "is_bot": None}
+            tasks.append((s, _rutube()))
         else:
             async def _noop():
                 return {"followers": None, "is_bot": None}
