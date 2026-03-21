@@ -148,10 +148,9 @@ async def fetch_telegram_info(username: str) -> dict:
             resp = await client.get(f"https://t.me/{username}")
             resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
-        # Detect bot by page action button or username ending with "bot"
-        action = soup.find("a", class_="tgme_action_button_new")
-        action_text = action.get_text(strip=True).lower() if action else ""
-        if "send message" in action_text or "отправить сообщение" in action_text or username.lower().endswith("bot"):
+        # Detect bot only by username ending with "bot"
+        # "Send Message" button appears for both personal accounts and bots
+        if username.lower().endswith("bot"):
             result["is_bot"] = True
         else:
             result["is_bot"] = False
