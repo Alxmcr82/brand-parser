@@ -235,57 +235,40 @@ async def fetch_max_info(channel_slug: str) -> dict:
 
 
 async def fetch_dzen_followers(slug: str) -> Optional[int]:
-    """Fetch subscriber count from Dzen channel page via Playwright (JS-rendered)."""
-    dzen_url = f"https://dzen.ru/{slug}"
-    script = f'''
-import sys
-from playwright.sync_api import sync_playwright
+    """Fetch subscriber count via Dzen API."""
+    # Strip "t/" prefix if present
+    channel_name = slug.removeprefix("t/")
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                "https://dzen.ru/api/v3/launcher/more",
+                params={"channel_name": channel_name},
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
+            data = resp.json()
+        # Subscriber count is in channel info within the response
+        # Search recursively in the JSON for subscribers_count
+        return _find_subscribers_in_dzen(data)
+    except Exception:
+        pass
+    return None
 
-with sync_playwright() as p:
-    browser = p.chromium.launch(
-        headless=True,
-        args=["--no-sandbox", "--disable-setuid-sandbox"],
-    )
-    context = browser.new_context(
-        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-        locale="ru-RU",
-    )
-    page = context.new_page()
-    page.goto("{dzen_url}", wait_until="domcontentloaded", timeout=30000)
-    page.wait_for_timeout(3000)
-    html = page.content()
-    browser.close()
-    sys.stdout.buffer.write(html.encode("utf-8"))
-'''
-    import subprocess as _sp
 
-    def _run():
-        result = _sp.run(
-            [sys.executable, "-c", script],
-            capture_output=True, timeout=45,
-        )
-        if result.returncode != 0:
-            return None
-        return result.stdout.decode("utf-8", errors="replace")
-
-    loop = asyncio.get_event_loop()
-    html = await loop.run_in_executor(None, _run)
-    if not html:
-        return None
-
-    soup = BeautifulSoup(html, "html.parser")
-    # Dzen shows subscribers as "X подписчиков" or "X подписчик"
-    for el in soup.find_all(string=re.compile(r"подписчик", re.IGNORECASE)):
-        text = el.strip()
-        m = re.search(r"([\d\s.,]+)\s*подписчик", text, re.IGNORECASE)
-        if m:
-            return _parse_subscriber_text(m.group(1))
-    # Fallback: look in nearby elements
-    for el in soup.find_all(attrs={"class": re.compile(r"subscriber|follow", re.IGNORECASE)}):
-        text = el.get_text(strip=True)
-        m = re.search(r"([\d\s.,]+)", text)
-        if m:
-            return _parse_subscriber_text(m.group(1))
+def _find_subscribers_in_dzen(obj) -> Optional[int]:
+    """Recursively search Dzen API response for subscriber count."""
+    if isinstance(obj, dict):
+        for key in ("subscribers", "subscribersCount", "subscribers_count"):
+            if key in obj and isinstance(obj[key], int):
+                return obj[key]
+        for v in obj.values():
+            result = _find_subscribers_in_dzen(v)
+            if result is not None:
+                return result
+    elif isinstance(obj, list):
+        for item in obj:
+            result = _find_subscribers_in_dzen(item)
+            if result is not None:
+                return result
     return None
 
 
