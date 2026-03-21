@@ -299,20 +299,42 @@ async def fetch_rutube_followers(slug: str) -> Optional[int]:
 
 
 async def fetch_ok_followers(slug: str) -> Optional[int]:
-    """Fetch member count from OK (Odnoklassniki) page."""
-    try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
-            resp = await client.get(
-                f"https://ok.ru/{slug}",
-                headers={"User-Agent": "Mozilla/5.0"},
-            )
-            html = resp.text
-        # "участников" or "подписчиков" with a number
-        m = re.search(r"([\d\s]+)\s*(?:участник|подписчик)", html, re.IGNORECASE)
-        if m:
-            return int(m.group(1).replace(" ", "").replace("\xa0", ""))
-    except Exception:
-        pass
+    """Fetch member count from OK (Odnoklassniki) via Playwright."""
+    ok_url = f"https://ok.ru/{slug}/members"
+    script = f'''
+import sys
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True, args=["--no-sandbox"])
+    page = browser.new_page()
+    page.goto("{ok_url}", wait_until="domcontentloaded", timeout=20000)
+    page.wait_for_timeout(3000)
+    html = page.content()
+    browser.close()
+    sys.stdout.buffer.write(html.encode("utf-8"))
+'''
+    import subprocess as _sp
+
+    def _run():
+        result = _sp.run(
+            [sys.executable, "-c", script],
+            capture_output=True, timeout=30,
+        )
+        if result.returncode != 0:
+            return None
+        return result.stdout.decode("utf-8", errors="replace")
+
+    loop = asyncio.get_event_loop()
+    html = await loop.run_in_executor(None, _run)
+    if not html:
+        return None
+
+    m = re.search(r"Участники\s*([\d\s\xa0]+)", html)
+    if m:
+        return int(m.group(1).replace(" ", "").replace("\xa0", ""))
+    m = re.search(r"([\d\s\xa0]+)\s*(?:участник|подписчик)", html, re.IGNORECASE)
+    if m:
+        return int(m.group(1).replace(" ", "").replace("\xa0", ""))
     return None
 
 
