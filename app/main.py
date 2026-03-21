@@ -214,20 +214,24 @@ async def fetch_youtube_followers(channel_path: str) -> Optional[int]:
 
 
 async def fetch_max_info(channel_slug: str) -> dict:
-    """Fetch type and participants count via Max API (needs MAX_BOT_TOKEN)."""
+    """Fetch type and participants count by parsing max.ru page."""
     result: dict = {"is_bot": None, "followers": None}
-    if not MAX_BOT_TOKEN:
-        return result
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
             resp = await client.get(
-                f"https://platform-api.max.ru/chats/{channel_slug}",
-                headers={"Authorization": MAX_BOT_TOKEN},
+                f"https://max.ru/{channel_slug}",
+                headers={"User-Agent": "Mozilla/5.0"},
             )
-            data = resp.json()
-        chat_type = data.get("type", "")
-        result["is_bot"] = chat_type == "bot"
-        result["followers"] = data.get("participants_count")
+            html = resp.text
+        # participantsCount is embedded in JS data
+        m = re.search(r'"participantsCount"\s*:\s*(\d+)', html)
+        if m:
+            result["followers"] = int(m.group(1))
+        # Detect bot by checking for bot-related markers in the page
+        if re.search(r'"type"\s*:\s*"bot"', html):
+            result["is_bot"] = True
+        else:
+            result["is_bot"] = False
     except Exception:
         pass
     return result
