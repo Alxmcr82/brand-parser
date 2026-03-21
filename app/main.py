@@ -516,9 +516,16 @@ async def parse_brand(req: ParseRequest):
     try:
         html, soup, used_playwright = await fetch_page(req.url)
     except Exception as e:
-        import traceback
-        traceback.print_exc()  # выведет полный стек в терминал
-        raise HTTPException(status_code=422, detail=f"Could not fetch URL: {type(e).__name__}: {str(e)}")
+        err = str(e)
+        if "ERR_NAME_NOT_RESOLVED" in err or "Name or service not known" in err:
+            msg = f"Сайт {req.url} не найден. Проверьте правильность домена."
+        elif "Timeout" in err or "timed out" in err.lower():
+            msg = f"Сайт {req.url} не отвечает (таймаут). Попробуйте позже."
+        elif "ERR_CONNECTION_REFUSED" in err:
+            msg = f"Сайт {req.url} отказал в соединении."
+        else:
+            msg = f"Не удалось загрузить {req.url}: {type(e).__name__}"
+        raise HTTPException(status_code=422, detail=msg)
 
     if req.use_ai and ANTHROPIC_API_KEY:
         try:
