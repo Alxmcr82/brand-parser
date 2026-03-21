@@ -419,12 +419,21 @@ async def fetch_page(url: str) -> tuple[str, BeautifulSoup, bool]:
     Returns (html, soup, used_playwright)."""
     try:
         html, soup = await fetch_with_httpx(url)
-        # If page looks like a JS-rendered shell (no title, no meaningful content), try Playwright
+        # If page looks like a JS-rendered shell, try Playwright
         has_title = soup.title and soup.title.string and soup.title.string.strip()
         has_meta = soup.find("meta", attrs={"name": "description"}) is not None
+        has_socials = bool(extract_socials_regex(html))
+        has_description = extract_description_heuristic(soup) is not None
         if not has_title and not has_meta and len(html) < 100_000:
             html, soup = await fetch_with_playwright(url)
             return html, soup, True
+        # If we got a page but found nothing useful, try Playwright for JS-rendered content
+        if not has_socials and not has_description:
+            try:
+                html2, soup2 = await fetch_with_playwright(url)
+                return html2, soup2, True
+            except Exception:
+                pass  # fallback to original httpx result
         return html, soup, False
     except httpx.HTTPStatusError as e:
         if e.response.status_code in (401, 403, 429):
