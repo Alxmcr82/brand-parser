@@ -281,6 +281,24 @@ def _find_subscribers_in_dzen(obj) -> Optional[int]:
     return None
 
 
+async def fetch_ok_followers(slug: str) -> Optional[int]:
+    """Fetch member count from OK (Odnoklassniki) page."""
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
+            resp = await client.get(
+                f"https://ok.ru/{slug}",
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
+            html = resp.text
+        # "участников" or "подписчиков" with a number
+        m = re.search(r"([\d\s]+)\s*(?:участник|подписчик)", html, re.IGNORECASE)
+        if m:
+            return int(m.group(1).replace(" ", "").replace("\xa0", ""))
+    except Exception:
+        pass
+    return None
+
+
 def _extract_slug(url: str, platform: str) -> str:
     """Extract username/slug from social URL."""
     url = url.rstrip("/")
@@ -317,6 +335,10 @@ async def enrich_with_followers(socials: list[SocialLink]) -> list[SocialLink]:
             async def _dzen(sl=slug):
                 return {"followers": await fetch_dzen_followers(sl), "is_bot": None}
             tasks.append((s, _dzen()))
+        elif s.platform == "OK" and slug:
+            async def _ok(sl=slug):
+                return {"followers": await fetch_ok_followers(sl), "is_bot": None}
+            tasks.append((s, _ok()))
         else:
             async def _noop():
                 return {"followers": None, "is_bot": None}
