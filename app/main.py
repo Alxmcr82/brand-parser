@@ -538,13 +538,18 @@ async def parse_brand(req: ParseRequest):
 
     if req.use_ai and ANTHROPIC_API_KEY:
         try:
-            return await parse_with_ai(req.url, html, used_playwright)
+            result = await parse_with_ai(req.url, html, used_playwright)
         except HTTPException:
             raise
         except Exception:
-            return await parse_with_regex(req.url, html, soup, used_playwright)
+            result = await parse_with_regex(req.url, html, soup, used_playwright)
     else:
-        return await parse_with_regex(req.url, html, soup, used_playwright)
+        result = await parse_with_regex(req.url, html, soup, used_playwright)
+
+    if not result.description and not result.socials:
+        result.description = "Сайт заблокировал доступ — не удалось извлечь данные."
+
+    return result
 
 
 @app.post("/parse/batch", response_model=list[ParseResponse])
