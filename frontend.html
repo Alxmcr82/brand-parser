@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brand Parser</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">
+      <span class="logo-tag">// tool v1.0</span>
+      <h1>Brand <span>Parser</span></h1>
+    </div>
+    <div class="api-status">
+      <div class="dot" id="status-dot"></div>
+      <span id="status-text">проверка...</span>
+    </div>
+  </header>
+
+  <!-- Parse box -->
+  <div class="parse-box">
+    <div class="input-row">
+      <input
+        class="url-input"
+        id="url-input"
+        type="text"
+        placeholder="https://example.com"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="parse-btn" id="parse-btn" onclick="runParse()">Парсить</button>
+    </div>
+    <div class="options-row">
+      <label class="toggle-label" onclick="toggleAI()">
+        <div class="toggle on" id="ai-toggle"></div>
+        Использовать AI
+      </label>
+      <span class="api-url-hint" id="api-url-hint">api → auto</span>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-section" id="result-section"></div>
+
+  <!-- History -->
+  <div class="history-section">
+    <div class="section-header">
+      <span class="section-title">История</span>
+      <button class="clear-btn" onclick="clearHistory()">Очистить</button>
+    </div>
+
+    <div class="export-bar">
+      <button class="export-btn" id="export-csv-btn" onclick="exportCSV()" disabled>
+        ↓ CSV
+      </button>
+      <button class="export-btn" id="export-json-btn" onclick="exportJSON()" disabled>
+        ↓ JSON
+      </button>
+    </div>
+
+    <div style="margin-top: 12px;">
+      <div class="history-list" id="history-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="static/app.js"></script>
+</body>
+</html>
