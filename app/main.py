@@ -60,6 +60,8 @@ SOCIAL_PATTERNS = {
     "Dribbble":    r"https?://(?:www\.)?dribbble\.com/[a-zA-Z0-9_]+",
     "GitHub":      r"https?://(?:www\.)?github\.com/[a-zA-Z0-9_-]+",
     "Dzen":        r"https?://(?:www\.)?dzen\.ru/(?:t/)?[a-zA-Z0-9_.-]+",
+    "Rutube":      r"https?://(?:www\.)?rutube\.ru/(?:channel/|u/)[a-zA-Z0-9_-]+",
+    "OK":          r"https?://(?:www\.)?ok\.ru/[a-zA-Z0-9_.]+",
 }
 
 
