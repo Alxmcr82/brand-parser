@@ -224,11 +224,11 @@ async def fetch_max_info(channel_slug: str) -> dict:
             )
             html = resp.text
         # participantsCount is embedded in JS data
-        m = re.search(r'"participantsCount"\s*:\s*(\d+)', html)
+        m = re.search(r'participantsCount["\s]*:\s*(\d+)', html)
         if m:
             result["followers"] = int(m.group(1))
         # Detect bot by checking for bot-related markers in the page
-        if re.search(r'"type"\s*:\s*"bot"', html):
+        if re.search(r'type["\s]*:\s*["\']?bot', html):
             result["is_bot"] = True
         else:
             result["is_bot"] = False
