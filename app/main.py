@@ -283,12 +283,12 @@ def _find_subscribers_in_dzen(obj) -> Optional[int]:
     return None
 
 
-async def fetch_rutube_followers(slug: str) -> Optional[int]:
-    """Fetch subscriber count from Rutube channel page."""
+async def fetch_rutube_followers(url: str) -> Optional[int]:
+    """Fetch subscriber count from Rutube channel/user page."""
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
             resp = await client.get(
-                f"https://rutube.ru/u/{slug}/",
+                url,
                 headers={"User-Agent": "Mozilla/5.0"},
             )
             html = resp.text
@@ -365,9 +365,9 @@ async def enrich_with_followers(socials: list[SocialLink]) -> list[SocialLink]:
             async def _ok(sl=slug):
                 return {"followers": await fetch_ok_followers(sl), "is_bot": None}
             tasks.append((s, _ok()))
-        elif s.platform == "Rutube" and slug:
-            async def _rutube(sl=slug):
-                return {"followers": await fetch_rutube_followers(sl), "is_bot": None}
+        elif s.platform == "Rutube":
+            async def _rutube(u=s.url):
+                return {"followers": await fetch_rutube_followers(u), "is_bot": None}
             tasks.append((s, _rutube()))
         else:
             async def _noop():
