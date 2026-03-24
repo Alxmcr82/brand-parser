@@ -3,6 +3,7 @@ import asyncio
 import os
 import json
 import re
+import hmac
 import time as _time
 from collections import defaultdict
 from pathlib import Path
@@ -24,6 +25,9 @@ app = FastAPI(
     title="Brand Parser API",
     description="Parses brand description and social media links from any website",
     version="1.0.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 app.add_middleware(
@@ -683,12 +687,14 @@ def _check_rate_limit(client_ip: str) -> bool:
 
 @app.post("/parse", response_model=ParseResponse)
 async def parse_brand(req: ParseRequest, request: Request):
-    if ACCESS_KEY and req.access_key != ACCESS_KEY:
+    if ACCESS_KEY and not hmac.compare_digest(req.access_key, ACCESS_KEY):
         raise HTTPException(status_code=403, detail="Неверный ключ доступа")
     client_ip = request.client.host if request.client else "unknown"
     if not _check_rate_limit(client_ip):
         raise HTTPException(status_code=429, detail="Слишком много запросов. Подождите минуту.")
     url = req.url.strip()
+    if len(url) > 2048:
+        raise HTTPException(status_code=400, detail="URL слишком длинный")
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
     # Trim to domain root (strip path, query, fragment)
@@ -730,15 +736,29 @@ async def parse_brand(req: ParseRequest, request: Request):
     return result
 
 
+class BatchRequest(BaseModel):
+    urls: list[str]
+    use_ai: bool = True
+    access_key: str = ""
+
+
 @app.post("/parse/batch", response_model=list[ParseResponse])
-async def parse_batch(urls: list[str], use_ai: bool = True):
-    if len(urls) > 20:
-        raise HTTPException(status_code=400, detail="Max 20 URLs per batch request")
+async def parse_batch(req: BatchRequest, request: Request):
+    if ACCESS_KEY and not hmac.compare_digest(req.access_key, ACCESS_KEY):
+        raise HTTPException(status_code=403, detail="Неверный ключ доступа")
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Слишком много запросов. Подождите минуту.")
+    if len(req.urls) > 20:
+        raise HTTPException(status_code=400, detail="Максимум 20 URL за один запрос")
 
     results = []
-    for url in urls:
+    for url in req.urls:
         try:
-            result = await parse_brand(ParseRequest(url=url, use_ai=use_ai))
+            result = await parse_brand(
+                ParseRequest(url=url, use_ai=req.use_ai, access_key=req.access_key),
+                request=request,
+            )
         except HTTPException:
             result = ParseResponse(url=url, description=None, socials=[], method="error")
         results.append(result)
