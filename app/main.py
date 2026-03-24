@@ -127,6 +127,9 @@ def extract_description_heuristic(soup: BeautifulSoup) -> Optional[str]:
                 if len(text) > 60:
                     return text[:500]
 
+    if soup.title and soup.title.string and soup.title.string.strip():
+        return soup.title.string.strip()
+
     return None
 
 
