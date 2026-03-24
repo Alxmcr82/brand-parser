@@ -515,6 +515,38 @@ h1 span { color: var(--accent); }
   border-radius: var(--radius);
 }
 
+/* Access gate */
+.access-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+.access-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+.access-box h1 { margin-bottom: 24px; }
+.access-hint {
+  color: var(--text2);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+.access-box .input-row { justify-content: center; }
+.access-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 12px;
+  min-height: 18px;
+}
+
 /* Mobile */
 @media (max-width: 600px) {
   .container { padding: 24px 12px; }

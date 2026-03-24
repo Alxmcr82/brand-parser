@@ -9,7 +9,20 @@
 <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
-<div class="container">
+<!-- Access gate -->
+<div class="access-gate" id="access-gate">
+  <div class="access-box">
+    <h1>Brand <span>Parser</span></h1>
+    <p class="access-hint">Введите ключ доступа</p>
+    <div class="input-row">
+      <input class="url-input" id="access-key-input" type="password" placeholder="Ключ доступа" autocomplete="off" />
+      <button class="parse-btn" onclick="submitAccessKey()">Войти</button>
+    </div>
+    <p class="access-error" id="access-error"></p>
+  </div>
+</div>
+
+<div class="container" id="main-container" style="display:none;">
 
   <header>
     <div class="logo">

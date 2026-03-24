@@ -1,14 +1,35 @@
 const API_BASE = window.location.origin;
 let useAI = false;
 let history = JSON.parse(localStorage.getItem('bp_history') || '[]');
+let accessKey = localStorage.getItem('bp_access_key') || '';
 
 // --- Init ---
-checkHealth();
-renderHistory();
+if (accessKey) {
+  showApp();
+} else {
+  document.getElementById('access-gate').style.display = '';
+  document.getElementById('access-key-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitAccessKey();
+  });
+}
 
-document.getElementById('url-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') runParse();
-});
+function submitAccessKey() {
+  const key = document.getElementById('access-key-input').value.trim();
+  if (!key) return;
+  accessKey = key;
+  localStorage.setItem('bp_access_key', key);
+  showApp();
+}
+
+function showApp() {
+  document.getElementById('access-gate').style.display = 'none';
+  document.getElementById('main-container').style.display = '';
+  checkHealth();
+  renderHistory();
+  document.getElementById('url-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runParse();
+  });
+}
 
 // --- Health check ---
 async function checkHealth() {
@@ -50,7 +71,7 @@ async function runParse() {
     const resp = await fetch(`${API_BASE}/parse`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, use_ai: useAI }),
+      body: JSON.stringify({ url, use_ai: useAI, access_key: accessKey }),
       signal: controller.signal,
     });
     clearTimeout(timeout);
@@ -58,6 +79,14 @@ async function runParse() {
     const data = await resp.json();
 
     if (!resp.ok) {
+      if (resp.status === 403) {
+        localStorage.removeItem('bp_access_key');
+        accessKey = '';
+        document.getElementById('main-container').style.display = 'none';
+        document.getElementById('access-gate').style.display = '';
+        document.getElementById('access-error').textContent = 'Неверный ключ доступа';
+        return;
+      }
       showError(data.detail || 'Неизвестная ошибка');
       return;
     }

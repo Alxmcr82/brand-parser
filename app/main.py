@@ -52,6 +52,7 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 VK_TOKEN = os.environ.get("VK_TOKEN", "")
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 MAX_BOT_TOKEN = os.environ.get("MAX_BOT_TOKEN", "")
+ACCESS_KEY = os.environ.get("ACCESS_KEY", "")
 
 _P = r"(?:https?:)?//"  # matches https://, http://, and protocol-relative //
 
@@ -82,6 +83,7 @@ SOCIAL_PATTERNS = {
 class ParseRequest(BaseModel):
     url: str
     use_ai: bool = True
+    access_key: str = ""
 
 
 class SocialLink(BaseModel):
@@ -679,6 +681,8 @@ def _check_rate_limit(client_ip: str) -> bool:
 
 @app.post("/parse", response_model=ParseResponse)
 async def parse_brand(req: ParseRequest, request: Request):
+    if ACCESS_KEY and req.access_key != ACCESS_KEY:
+        raise HTTPException(status_code=403, detail="Неверный ключ доступа")
     client_ip = request.client.host if request.client else "unknown"
     if not _check_rate_limit(client_ip):
         raise HTTPException(status_code=429, detail="Слишком много запросов. Подождите минуту.")
