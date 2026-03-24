@@ -616,7 +616,12 @@ HTML:
 
     socials = await enrich_with_followers(ai_socials)
     method = "ai+playwright" if playwright else "ai"
-    return ParseResponse(url=url, description=data.get("description"), socials=socials, method=method)
+    # Fallback: if AI didn't find description, try regex heuristic
+    description = data.get("description")
+    if not description:
+        soup = BeautifulSoup(html, "html.parser")
+        description = extract_description_heuristic(soup)
+    return ParseResponse(url=url, description=description, socials=socials, method=method)
 
 
 async def parse_with_regex(url: str, html: str, soup: BeautifulSoup, playwright: bool) -> ParseResponse:
