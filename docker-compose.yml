@@ -9,6 +9,7 @@ services:
       - ./app:/app/app
       - ./static:/app/static
       - ./frontend.html:/app/frontend.html
+      - ./how.html:/app/how.html
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
