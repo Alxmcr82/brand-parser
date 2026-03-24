@@ -706,6 +706,8 @@ async def parse_brand(req: ParseRequest, request: Request):
             msg = f"Сайт {req.url} не отвечает (таймаут). Попробуйте позже."
         elif "ERR_CONNECTION_REFUSED" in err:
             msg = f"Сайт {req.url} отказал в соединении."
+        elif "403" in err or "Forbidden" in err:
+            msg = "Сайт заблокировал доступ — не удалось извлечь данные."
         else:
             msg = f"Не удалось загрузить {req.url}: {type(e).__name__}"
         raise HTTPException(status_code=422, detail=msg)

@@ -79,7 +79,7 @@ async function runParse() {
     const data = await resp.json();
 
     if (!resp.ok) {
-      if (resp.status === 403) {
+      if (resp.status === 403 && (data.detail || '').includes('ключ')) {
         localStorage.removeItem('bp_access_key');
         accessKey = '';
         document.getElementById('main-container').style.display = 'none';
