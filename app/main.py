@@ -65,6 +65,7 @@ SOCIAL_PATTERNS = {
     "TikTok":      _P + r"(?:www\.)?tiktok\.com/@[a-zA-Z0-9_.]+",
     "Pinterest":   _P + r"(?:www\.)?pinterest\.(?:com|ru)/[a-zA-Z0-9_]+",
     "Telegram":    _P + r"t\.me/[a-zA-Z0-9_]+",
+    "VK Чат":      _P + r"(?:www\.)?vk\.(?:com|ru)/im\?sel=-?\d+",
     "VK":          _P + r"(?:www\.)?vk\.(?:com|ru)/[a-zA-Z0-9_]+",
     "Max":         _P + r"(?:www\.)?max\.ru/(?:u/)?[a-zA-Z0-9_-]+",
     "WhatsApp":    _P + r"wa\.me/[0-9]+",
@@ -102,7 +103,7 @@ class ParseResponse(BaseModel):
 
 # URL paths that are not real social profiles (JS, API, tracking pixels, etc.)
 _SOCIAL_BLACKLIST = re.compile(
-    r"/js(?:/|$)|/api(?:/|$)|/rtrg|/share|/widget|/oauth|/login|/signup|/legal|/help|/about$|/terms|/policy|/im(?:\?|$)",
+    r"/js(?:/|$)|/api(?:/|$)|/rtrg|/share|/widget|/oauth|/login|/signup|/legal|/help|/about$|/terms|/policy|/im$",
     re.IGNORECASE,
 )
 
