@@ -56,7 +56,7 @@ SOCIAL_PATTERNS = {
     "Pinterest":   _P + r"(?:www\.)?pinterest\.(?:com|ru)/[a-zA-Z0-9_]+",
     "Telegram":    _P + r"t\.me/[a-zA-Z0-9_]+",
     "VK":          _P + r"(?:www\.)?vk\.(?:com|ru)/[a-zA-Z0-9_]+",
-    "Max":         _P + r"(?:www\.)?max\.ru/[a-zA-Z0-9_]+",
+    "Max":         _P + r"(?:www\.)?max\.ru/(?:u/)?[a-zA-Z0-9_-]+",
     "WhatsApp":    _P + r"wa\.me/[0-9]+",
     "Behance":     _P + r"(?:www\.)?behance\.net/[a-zA-Z0-9_]+",
     "Dribbble":    _P + r"(?:www\.)?dribbble\.com/[a-zA-Z0-9_]+",
@@ -328,6 +328,10 @@ def _extract_slug(url: str, platform: str) -> str:
     if platform == "YouTube":
         # https://youtube.com/@handle or /channel/ID or /user/name
         m = re.search(r"youtube\.com/((?:@|channel/|user/)[a-zA-Z0-9_-]+)", url)
+        return m.group(1) if m else ""
+    if platform == "Max":
+        # https://max.ru/channelname or https://max.ru/u/token
+        m = re.search(r"max\.ru/((?:u/)?[a-zA-Z0-9_-]+)", url)
         return m.group(1) if m else ""
     if platform == "Dzen":
         # https://dzen.ru/name or https://dzen.ru/t/name
