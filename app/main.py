@@ -582,9 +582,17 @@ Return only JSON like:
     raw = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.MULTILINE).strip()
 
     data = json.loads(raw)
-    socials = [SocialLink(**s) for s in data.get("socials", [])]
+    ai_socials = [SocialLink(**s) for s in data.get("socials", [])]
 
-    socials = await enrich_with_followers(socials)
+    # Merge: regex finds links AI may have missed (e.g. in footer beyond 15k chars)
+    regex_socials = extract_socials_regex(html)
+    seen_urls = {s.url.lower().rstrip("/") for s in ai_socials}
+    for rs in regex_socials:
+        if rs.url.lower().rstrip("/") not in seen_urls:
+            ai_socials.append(rs)
+            seen_urls.add(rs.url.lower().rstrip("/"))
+
+    socials = await enrich_with_followers(ai_socials)
     method = "ai+playwright" if playwright else "ai"
     return ParseResponse(url=url, description=data.get("description"), socials=socials, method=method)
 
