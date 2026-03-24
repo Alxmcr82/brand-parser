@@ -82,6 +82,9 @@ SOCIAL_PATTERNS = {
     "VC":          _P + r"(?:www\.)?vc\.ru/[a-zA-Z0-9_-]+",
     "HeadHunter":  _P + r"(?:www\.)?hh\.ru/employer/[0-9]+",
     "Habr":        _P + r"(?:www\.)?habr\.com/ru/(?:companies|users)/[a-zA-Z0-9_-]+",
+    "WeChat":      _P + r"mp\.weixin\.qq\.com/[a-zA-Z0-9_/?=&]+",
+    "Weibo":       _P + r"(?:www\.)?weibo\.com/[a-zA-Z0-9_-]+",
+    "Zhihu":       _P + r"(?:www\.)?zhihu\.com/(?:org|people)/[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*",
 }
 
 
