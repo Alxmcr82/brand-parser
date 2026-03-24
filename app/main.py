@@ -542,20 +542,21 @@ async def parse_with_ai(url: str, html: str, playwright: bool) -> ParseResponse:
     trimmed_html = html[:15000]
 
     system = (
-        "You are a web content analyst. "
-        "Extract brand description and social media links from HTML. "
-        "Return ONLY valid JSON, no markdown, no extra text."
+        "Ты — веб-аналитик. "
+        "Извлекай описание бренда и ссылки на соцсети из HTML. "
+        "Описание бренда ВСЕГДА пиши на русском языке. "
+        "Возвращай ТОЛЬКО валидный JSON, без markdown, без лишнего текста."
     )
 
-    user_prompt = f"""Analyze this HTML from {url} and return JSON with:
-1. "description": 2-4 sentence brand description (from About section, meta tags, hero text). null if not found.
-2. "socials": array of {{"platform": "...", "url": "..."}} for every social media link found.
+    user_prompt = f"""Проанализируй HTML с сайта {url} и верни JSON:
+1. "description": описание бренда на русском языке, 2-4 предложения (из раздела О компании, мета-тегов, заголовков). null если не найдено.
+2. "socials": массив {{"platform": "...", "url": "..."}} для каждой найденной ссылки на соцсеть.
 
 HTML:
 {trimmed_html}
 
-Return only JSON like:
-{{"description": "...", "socials": [{{"platform": "Instagram", "url": "https://instagram.com/brand"}}]}}"""
+Верни только JSON в формате:
+{{"description": "Описание на русском...", "socials": [{{"platform": "Instagram", "url": "https://instagram.com/brand"}}]}}"""
 
     if OPENROUTER_API_KEY:
         async with httpx.AsyncClient(timeout=30.0) as client:
