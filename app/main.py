@@ -1,20 +1,23 @@
 import sys
 import asyncio
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 import json
 import re
+import time as _time
+from collections import defaultdict
+from pathlib import Path
+from typing import Optional
+
+from dotenv import load_dotenv
+load_dotenv()
+
 import httpx
 from bs4 import BeautifulSoup
-from pathlib import Path
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import Optional
 import anthropic
 
 app = FastAPI(
@@ -72,6 +75,7 @@ SOCIAL_PATTERNS = {
     "OK":          _P + r"(?:www\.)?ok\.ru/(?:group/)?[a-zA-Z0-9_.]+",
     "VC":          _P + r"(?:www\.)?vc\.ru/[a-zA-Z0-9_-]+",
     "HeadHunter":  _P + r"(?:www\.)?hh\.ru/employer/[0-9]+",
+    "Habr":        _P + r"(?:www\.)?habr\.com/ru/(?:companies|users)/[a-zA-Z0-9_-]+",
 }
 
 
@@ -342,10 +346,18 @@ async def fetch_vc_followers(slug: str) -> Optional[int]:
                 headers={"User-Agent": "Mozilla/5.0"},
             )
             html = resp.text
-        # JSON counters embedded in page: "subscribers": 928
-        m = re.search(r'"subscribers"\s*:\s*(\d+)', html)
+        # Find the JSON object for this specific profile by matching the slug,
+        # then grab its "subscribers" field. The page has many "subscribers"
+        # values for different communities — we need the one for our slug.
+        # Pattern: "url":"https://vc.ru/slug",...,"subscribers":N
+        pattern = rf'"url"\s*:\s*"https?://vc\.ru/{re.escape(slug)}"[^}}]*?"subscribers"\s*:\s*(\d+)'
+        m = re.search(pattern, html)
         if m:
             return int(m.group(1))
+        # Fallback: visible text "N подписчиков"
+        m = re.search(r'(\d[\d\s]*)\s*подписчик', html)
+        if m:
+            return int(m.group(1).replace(" ", ""))
     except Exception:
         pass
     return None
@@ -640,21 +652,25 @@ def _is_valid_url(url: str) -> bool:
         return False
 
 
-import time as _time
-from collections import defaultdict
-from fastapi import Request
-
 _rate_limit: dict[str, list[float]] = defaultdict(list)
 _RATE_LIMIT_MAX = 10  # requests per window
 _RATE_LIMIT_WINDOW = 60  # seconds
 
 
+_rate_limit_cleanup = 0.0
+
+
 def _check_rate_limit(client_ip: str) -> bool:
     """Return True if request is allowed."""
+    global _rate_limit_cleanup
     now = _time.time()
-    timestamps = _rate_limit[client_ip]
-    # Remove old entries
-    _rate_limit[client_ip] = [t for t in timestamps if now - t < _RATE_LIMIT_WINDOW]
+    # Periodically purge stale IPs (every 5 minutes)
+    if now - _rate_limit_cleanup > 300:
+        stale = [ip for ip, ts in _rate_limit.items() if not ts or now - ts[-1] > _RATE_LIMIT_WINDOW]
+        for ip in stale:
+            del _rate_limit[ip]
+        _rate_limit_cleanup = now
+    _rate_limit[client_ip] = [t for t in _rate_limit[client_ip] if now - t < _RATE_LIMIT_WINDOW]
     if len(_rate_limit[client_ip]) >= _RATE_LIMIT_MAX:
         return False
     _rate_limit[client_ip].append(now)

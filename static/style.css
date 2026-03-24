@@ -514,3 +514,17 @@ h1 span { color: var(--accent); }
   border: 1px dashed var(--border);
   border-radius: var(--radius);
 }
+
+/* Mobile */
+@media (max-width: 600px) {
+  .container { padding: 24px 12px; }
+  header { flex-direction: column; gap: 12px; }
+  h1 { font-size: 28px; }
+  .input-row { flex-direction: column; }
+  .parse-btn { width: 100%; }
+  .social-row { flex-wrap: wrap; gap: 6px; }
+  .social-name { min-width: auto; }
+  .social-link { max-width: 100%; }
+  .result-url { max-width: 200px; }
+  .result-export-bar { padding: 12px 16px; }
+}

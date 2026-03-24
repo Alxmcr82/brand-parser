@@ -41,15 +41,19 @@ async function runParse() {
   document.getElementById('result-section').innerHTML = `
     <div class="loading-box">
       <div class="spinner"></div>
-      <span>Загружаем <span style="color:var(--accent);font-family:'DM Mono',monospace">${url}</span></span>
+      <span>Загружаем <span style="color:var(--accent);font-family:'DM Mono',monospace">${esc(url)}</span></span>
     </div>`;
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000);
     const resp = await fetch(`${API_BASE}/parse`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url, use_ai: useAI }),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     const data = await resp.json();
 
