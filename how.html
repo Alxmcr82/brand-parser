@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Как это работает — Brand Parser</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23c8f542'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/style.css">
+<style>
+  .how-page { max-width: 720px; margin: 0 auto; padding: 40px 20px; }
+  .how-page h1 { font-size: 28px; margin-bottom: 8px; }
+  .how-page .subtitle { color: var(--text2); font-size: 14px; margin-bottom: 32px; }
+  .how-page h2 { font-size: 18px; color: var(--accent); margin: 28px 0 12px; }
+  .how-page p, .how-page li { font-size: 14px; color: var(--text2); line-height: 1.7; }
+  .how-page ul { padding-left: 20px; margin: 8px 0; }
+  .how-page li { margin-bottom: 6px; }
+  .how-page .platform-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); margin: 2px; }
+  .how-page .back-link { display: inline-block; margin-top: 32px; color: var(--accent); text-decoration: none; font-size: 14px; opacity: 0.7; transition: opacity 0.2s; }
+  .how-page .back-link:hover { opacity: 1; }
+  .how-page .step { display: flex; gap: 12px; margin-bottom: 16px; }
+  .how-page .step-num { flex-shrink: 0; width: 28px; height: 28px; background: var(--accent); color: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; margin-top: 2px; }
+  .how-page .step-text { flex: 1; }
+</style>
+</head>
+<body>
+<div class="how-page">
+
+  <h1>Как это работает</h1>
+  <p class="subtitle">Brand Parser — инструмент для быстрого сбора информации о брендах по URL</p>
+
+  <h2>Алгоритм работы</h2>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-text"><p>Вы вводите URL сайта компании. Парсер обрезает адрес до домена и загружает главную страницу.</p></div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-text"><p>Если сайт блокирует обычный запрос (403, Cloudflare, JS-рендеринг) — автоматически подключается браузер Playwright.</p></div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-text"><p>Из HTML извлекается описание бренда: сначала из meta-тегов, затем из текста страницы, в крайнем случае — из тега title.</p></div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-text"><p>По регулярным выражениям находятся все ссылки на социальные сети. Дубликаты удаляются, служебные URL (API, трекеры) фильтруются.</p></div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-text"><p>Для каждой найденной соцсети парсер запрашивает количество подписчиков через API платформы или со страницы профиля.</p></div>
+  </div>
+
+  <h2>Режим AI</h2>
+  <p>При включении тогла AI парсер отправляет HTML страницы в нейросеть (DeepSeek через OpenRouter), которая извлекает описание и ссылки. Regex-парсинг используется как запасной вариант, если AI недоступен. По умолчанию AI выключен.</p>
+
+  <h2>Платформы с подписчиками</h2>
+  <p>Для этих платформ парсер автоматически подтягивает количество подписчиков:</p>
+  <ul>
+    <li><span class="platform-tag">Telegram</span> — со страницы t.me (+ определение бота)</li>
+    <li><span class="platform-tag">VK</span> — через VK API</li>
+    <li><span class="platform-tag">YouTube</span> — через YouTube Data API</li>
+    <li><span class="platform-tag">Max</span> — со страницы max.ru (+ определение бота)</li>
+    <li><span class="platform-tag">Dzen</span> — через Dzen API</li>
+    <li><span class="platform-tag">OK</span> — с мобильной версии m.ok.ru</li>
+    <li><span class="platform-tag">Rutube</span> — со страницы канала</li>
+    <li><span class="platform-tag">VC.ru</span> — со страницы профиля</li>
+  </ul>
+
+  <h2>Платформы без подписчиков</h2>
+  <p>Ссылки определяются, но подписчики не доступны через открытые API:</p>
+  <p style="margin-top: 8px;">
+    <span class="platform-tag">Instagram</span>
+    <span class="platform-tag">Facebook</span>
+    <span class="platform-tag">Twitter / X</span>
+    <span class="platform-tag">LinkedIn</span>
+    <span class="platform-tag">TikTok</span>
+    <span class="platform-tag">Pinterest</span>
+    <span class="platform-tag">WhatsApp</span>
+    <span class="platform-tag">Behance</span>
+    <span class="platform-tag">Dribbble</span>
+    <span class="platform-tag">GitHub</span>
+    <span class="platform-tag">HeadHunter</span>
+  </p>
+
+  <h2>Экспорт</h2>
+  <p>Результаты сохраняются в историю браузера. Можно экспортировать в CSV или JSON — как отдельный результат, так и всю историю.</p>
+
+  <a class="back-link" href="/">&larr; Вернуться к парсеру</a>
+
+</div>
+</body>
+</html>

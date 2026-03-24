@@ -1,5 +1,5 @@
 const API_BASE = window.location.origin;
-let useAI = true;
+let useAI = false;
 let history = JSON.parse(localStorage.getItem('bp_history') || '[]');
 
 // --- Init ---

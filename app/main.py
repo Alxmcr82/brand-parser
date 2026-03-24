@@ -39,7 +39,13 @@ async def serve_frontend():
     return FileResponse(PROJECT_ROOT / "frontend.html")
 
 
+@app.get("/how", response_class=FileResponse)
+async def serve_how():
+    return FileResponse(PROJECT_ROOT / "how.html")
+
+
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 VK_TOKEN = os.environ.get("VK_TOKEN", "")
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 MAX_BOT_TOKEN = os.environ.get("MAX_BOT_TOKEN", "")
@@ -64,6 +70,8 @@ SOCIAL_PATTERNS = {
     "Dzen":        _P + r"(?:www\.)?dzen\.ru/(?:t/)?[a-zA-Z0-9_.-]+",
     "Rutube":      _P + r"(?:www\.)?rutube\.ru/(?:channel/|u/)[a-zA-Z0-9_-]+",
     "OK":          _P + r"(?:www\.)?ok\.ru/(?:group/)?[a-zA-Z0-9_.]+",
+    "VC":          _P + r"(?:www\.)?vc\.ru/[a-zA-Z0-9_-]+",
+    "HeadHunter":  _P + r"(?:www\.)?hh\.ru/employer/[0-9]+",
 }
 
 
@@ -325,6 +333,24 @@ async def fetch_ok_followers(slug: str) -> Optional[int]:
     return None
 
 
+async def fetch_vc_followers(slug: str) -> Optional[int]:
+    """Fetch subscriber count from vc.ru profile page."""
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
+            resp = await client.get(
+                f"https://vc.ru/{slug}",
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
+            html = resp.text
+        # JSON counters embedded in page: "subscribers": 928
+        m = re.search(r'"subscribers"\s*:\s*(\d+)', html)
+        if m:
+            return int(m.group(1))
+    except Exception:
+        pass
+    return None
+
+
 def _extract_slug(url: str, platform: str) -> str:
     """Extract username/slug from social URL."""
     url = url.rstrip("/")
@@ -380,6 +406,10 @@ async def enrich_with_followers(socials: list[SocialLink]) -> list[SocialLink]:
             async def _rutube(u=s.url):
                 return {"followers": await fetch_rutube_followers(u), "is_bot": None}
             tasks.append((s, _rutube()))
+        elif s.platform == "VC" and slug:
+            async def _vc(sl=slug):
+                return {"followers": await fetch_vc_followers(sl), "is_bot": None}
+            tasks.append((s, _vc()))
         else:
             async def _noop():
                 return {"followers": None, "is_bot": None}
@@ -501,11 +531,11 @@ async def fetch_page(url: str) -> tuple[str, BeautifulSoup, bool]:
 
 
 async def parse_with_ai(url: str, html: str, playwright: bool) -> ParseResponse:
-    if not ANTHROPIC_API_KEY:
-        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY is not set")
+    api_key = OPENROUTER_API_KEY or ANTHROPIC_API_KEY
+    if not api_key:
+        raise HTTPException(status_code=500, detail="No AI API key configured")
 
     trimmed_html = html[:15000]
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
     system = (
         "You are a web content analyst. "
@@ -513,7 +543,7 @@ async def parse_with_ai(url: str, html: str, playwright: bool) -> ParseResponse:
         "Return ONLY valid JSON, no markdown, no extra text."
     )
 
-    user = f"""Analyze this HTML from {url} and return JSON with:
+    user_prompt = f"""Analyze this HTML from {url} and return JSON with:
 1. "description": 2-4 sentence brand description (from About section, meta tags, hero text). null if not found.
 2. "socials": array of {{"platform": "...", "url": "..."}} for every social media link found.
 
@@ -523,14 +553,32 @@ HTML:
 Return only JSON like:
 {{"description": "...", "socials": [{{"platform": "Instagram", "url": "https://instagram.com/brand"}}]}}"""
 
-    message = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=1000,
-        system=system,
-        messages=[{"role": "user", "content": user}],
-    )
+    if OPENROUTER_API_KEY:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
+                json={
+                    "model": "deepseek/deepseek-chat-v3-0324",
+                    "max_tokens": 1000,
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                },
+            )
+            resp.raise_for_status()
+            raw = resp.json()["choices"][0]["message"]["content"].strip()
+    else:
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1000,
+            system=system,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        raw = message.content[0].text.strip()
 
-    raw = message.content[0].text.strip()
     raw = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.MULTILINE).strip()
 
     data = json.loads(raw)
