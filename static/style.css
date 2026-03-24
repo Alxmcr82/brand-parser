@@ -251,11 +251,13 @@ h1 span { color: var(--accent); }
   font-family: 'DM Mono', monospace;
   font-size: 12px;
   color: var(--accent);
+  text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 500px;
 }
+.result-url:hover { text-decoration: underline; }
 
 .method-badge {
   font-family: 'DM Mono', monospace;

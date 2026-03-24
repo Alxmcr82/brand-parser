@@ -118,7 +118,7 @@ function renderResult(data) {
   document.getElementById('result-section').innerHTML = `
     <div class="result-card">
       <div class="result-header">
-        <span class="result-url">${esc(data.url)}</span>
+        <a class="result-url" href="${esc(data.url)}" target="_blank">${esc(data.url)}</a>
         <span class="method-badge ${isAI ? 'ai' : ''}">${esc(data.method)}</span>
       </div>
       <div class="result-body">
