@@ -63,7 +63,7 @@ SOCIAL_PATTERNS = {
     "GitHub":      _P + r"(?:www\.)?github\.com/[a-zA-Z0-9_-]+",
     "Dzen":        _P + r"(?:www\.)?dzen\.ru/(?:t/)?[a-zA-Z0-9_.-]+",
     "Rutube":      _P + r"(?:www\.)?rutube\.ru/(?:channel/|u/)[a-zA-Z0-9_-]+",
-    "OK":          _P + r"(?:www\.)?ok\.ru/[a-zA-Z0-9_.]+",
+    "OK":          _P + r"(?:www\.)?ok\.ru/(?:group/)?[a-zA-Z0-9_.]+",
 }
 
 
@@ -332,6 +332,10 @@ def _extract_slug(url: str, platform: str) -> str:
     if platform == "Max":
         # https://max.ru/channelname or https://max.ru/u/token
         m = re.search(r"max\.ru/((?:u/)?[a-zA-Z0-9_-]+)", url)
+        return m.group(1) if m else ""
+    if platform == "OK":
+        # https://ok.ru/groupname or https://ok.ru/group/123456
+        m = re.search(r"ok\.ru/((?:group/)?[a-zA-Z0-9_.]+)", url)
         return m.group(1) if m else ""
     if platform == "Dzen":
         # https://dzen.ru/name or https://dzen.ru/t/name
