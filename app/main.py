@@ -25,9 +25,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["https://parcer.salo.ru", "http://localhost:8000"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -458,9 +458,12 @@ async def fetch_with_httpx(url: str) -> tuple[str, BeautifulSoup]:
 
 async def fetch_with_playwright(url: str) -> tuple[str, BeautifulSoup]:
     """Full browser fetch — bypasses Cloudflare and JS-rendered pages."""
-    script = f'''
-import json
+    # URL is passed via env var to prevent code injection through f-string
+    script = '''
+import os, sys
 from playwright.sync_api import sync_playwright
+
+target_url = os.environ["PLAYWRIGHT_TARGET_URL"]
 
 with sync_playwright() as p:
     browser = p.chromium.launch(
@@ -470,24 +473,25 @@ with sync_playwright() as p:
     context = browser.new_context(
         user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
         locale="ru-RU",
-        viewport={{"width": 1280, "height": 800}},
+        viewport={"width": 1280, "height": 800},
     )
     page = context.new_page()
-    page.add_init_script("Object.defineProperty(navigator, \'webdriver\', {{get: () => undefined}})")
-    page.goto("{url}", wait_until="domcontentloaded", timeout=30000)
+    page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+    page.goto(target_url, wait_until="domcontentloaded", timeout=30000)
     page.wait_for_timeout(3000)
     html = page.content()
     browser.close()
-    import sys
     sys.stdout.buffer.write(html.encode("utf-8"))
 '''
 
     import subprocess as _sp
 
     def _run():
+        env = os.environ.copy()
+        env["PLAYWRIGHT_TARGET_URL"] = url
         result = _sp.run(
             [sys.executable, "-c", script],
-            capture_output=True, timeout=60,
+            capture_output=True, timeout=60, env=env,
         )
         if result.returncode != 0:
             raise RuntimeError(f"Playwright subprocess failed: {result.stderr.decode(errors='replace')}")
@@ -611,18 +615,56 @@ async def health():
 
 
 def _is_valid_url(url: str) -> bool:
-    """Check that url looks like a real domain (has at least one dot and no spaces)."""
+    """Check that url looks like a real domain and is not an internal/reserved address."""
     from urllib.parse import urlparse
+    import ipaddress
     try:
         parsed = urlparse(url)
         host = parsed.hostname or ""
-        return "." in host and " " not in host
+        if not ("." in host and " " not in host):
+            return False
+        # Block internal/reserved IPs (SSRF protection)
+        try:
+            ip = ipaddress.ip_address(host)
+            if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+                return False
+        except ValueError:
+            pass  # Not an IP — it's a domain, that's fine
+        # Block common internal hostnames
+        blocked = ("localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254", "[::1]")
+        if host.lower() in blocked:
+            return False
+        return True
     except Exception:
         return False
 
 
+import time as _time
+from collections import defaultdict
+from fastapi import Request
+
+_rate_limit: dict[str, list[float]] = defaultdict(list)
+_RATE_LIMIT_MAX = 10  # requests per window
+_RATE_LIMIT_WINDOW = 60  # seconds
+
+
+def _check_rate_limit(client_ip: str) -> bool:
+    """Return True if request is allowed."""
+    now = _time.time()
+    timestamps = _rate_limit[client_ip]
+    # Remove old entries
+    _rate_limit[client_ip] = [t for t in timestamps if now - t < _RATE_LIMIT_WINDOW]
+    if len(_rate_limit[client_ip]) >= _RATE_LIMIT_MAX:
+        return False
+    _rate_limit[client_ip].append(now)
+    return True
+
+
 @app.post("/parse", response_model=ParseResponse)
-async def parse_brand(req: ParseRequest):
+async def parse_brand(req: ParseRequest, request: Request):
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Слишком много запросов. Подождите минуту.")
     url = req.url.strip()
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
@@ -647,7 +689,7 @@ async def parse_brand(req: ParseRequest):
             msg = f"Не удалось загрузить {req.url}: {type(e).__name__}"
         raise HTTPException(status_code=422, detail=msg)
 
-    if req.use_ai and ANTHROPIC_API_KEY:
+    if req.use_ai and (OPENROUTER_API_KEY or ANTHROPIC_API_KEY):
         try:
             result = await parse_with_ai(req.url, html, used_playwright)
         except HTTPException:

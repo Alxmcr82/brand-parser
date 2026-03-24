@@ -75,9 +75,9 @@ function renderResult(data) {
   const socialsHTML = data.socials.length > 0
     ? data.socials.map(s => `
         <div class="social-row">
-          <span class="social-name">${s.platform}</span>
+          <span class="social-name">${esc(s.platform)}</span>
           ${s.is_bot === true ? '<span class="bot-badge">bot</span>' : ''}
-          <a class="social-link" href="${s.url}" target="_blank">${s.url}</a>
+          <a class="social-link" href="${esc(s.url)}" target="_blank">${esc(s.url)}</a>
           ${s.followers != null ? `<span class="social-followers">${formatFollowers(s.followers)}</span>` : ''}
         </div>`).join('')
     : '<div class="no-data">Соцсети не найдены</div>';
@@ -85,14 +85,14 @@ function renderResult(data) {
   document.getElementById('result-section').innerHTML = `
     <div class="result-card">
       <div class="result-header">
-        <span class="result-url">${data.url}</span>
-        <span class="method-badge ${isAI ? 'ai' : ''}">${data.method}</span>
+        <span class="result-url">${esc(data.url)}</span>
+        <span class="method-badge ${isAI ? 'ai' : ''}">${esc(data.method)}</span>
       </div>
       <div class="result-body">
         <div>
           <div class="section-label">Описание бренда</div>
           ${data.description
-            ? `<div class="description-text">${data.description}</div>`
+            ? `<div class="description-text">${esc(data.description)}</div>`
             : '<div class="no-data">Описание не найдено</div>'}
         </div>
         <div>
@@ -111,7 +111,7 @@ function renderResult(data) {
 
 function showError(msg) {
   document.getElementById('result-section').innerHTML =
-    `<div class="error-box">✗ ${msg}</div>`;
+    `<div class="error-box">✗ ${esc(msg)}</div>`;
 }
 
 // --- History ---
@@ -150,9 +150,9 @@ function renderHistory() {
     return `
       <div class="history-item" onclick="loadFromHistory(${i})">
         <div class="history-dot"></div>
-        <span class="history-url">${item.url}</span>
+        <span class="history-url">${esc(item.url)}</span>
         <span class="history-socials-count">${item.socials.length} соцс.</span>
-        <span class="history-meta">${date}</span>
+        <span class="history-meta">${esc(date)}</span>
       </div>`;
   }).join('');
 }
@@ -230,6 +230,12 @@ function exportJSON() {
 
 function formatFollowers(n) {
   return n.toLocaleString('ru-RU');
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
 }
 
 function download(content, filename, type) {
