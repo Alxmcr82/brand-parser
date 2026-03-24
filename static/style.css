@@ -109,7 +109,9 @@ h1 span { color: var(--accent); }
 
 .how-it-works-link {
   margin-top: 12px;
-  font-size: 13px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  text-align: right;
 }
 .how-it-works-link a {
   color: var(--accent);
