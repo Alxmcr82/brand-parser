@@ -102,7 +102,7 @@ class ParseResponse(BaseModel):
 
 # URL paths that are not real social profiles (JS, API, tracking pixels, etc.)
 _SOCIAL_BLACKLIST = re.compile(
-    r"/js(?:/|$)|/api(?:/|$)|/rtrg|/share|/widget|/oauth|/login|/signup|/legal|/help|/about$|/terms|/policy",
+    r"/js(?:/|$)|/api(?:/|$)|/rtrg|/share|/widget|/oauth|/login|/signup|/legal|/help|/about$|/terms|/policy|/im(?:\?|$)",
     re.IGNORECASE,
 )
 
@@ -252,8 +252,10 @@ async def fetch_max_info(channel_slug: str) -> dict:
         m = re.search(r'participantsCount["\s]*:\s*(\d+)', html)
         if m:
             result["followers"] = int(m.group(1))
-        # Detect bot by checking for bot-related markers in the page
-        if re.search(r'type["\s]*:\s*["\']?bot', html):
+        # Detect bot by slug name or page markers
+        if channel_slug.rstrip("/").lower().endswith("bot") or channel_slug.rstrip("/").lower().endswith("_bot"):
+            result["is_bot"] = True
+        elif re.search(r'type["\s]*:\s*["\']?bot', html):
             result["is_bot"] = True
         else:
             result["is_bot"] = False
