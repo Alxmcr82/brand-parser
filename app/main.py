@@ -46,6 +46,11 @@ async def serve_frontend():
     return FileResponse(PROJECT_ROOT / "frontend.html")
 
 
+@app.get("/compare", response_class=FileResponse)
+async def serve_compare():
+    return FileResponse(PROJECT_ROOT / "frontend.html")
+
+
 @app.get("/how", response_class=FileResponse)
 async def serve_how():
     return FileResponse(PROJECT_ROOT / "how.html")

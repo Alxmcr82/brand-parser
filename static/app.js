@@ -26,6 +26,7 @@ function showApp() {
   document.getElementById('main-container').style.display = '';
   checkHealth();
   renderHistory();
+  detectTab();
   document.getElementById('url-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') runParse();
   });
@@ -316,14 +317,28 @@ function download(content, filename, type) {
 }
 
 // --- Tabs ---
-function switchTab(tab) {
+function switchTab(tab, updateHash) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-parse').style.display = tab === 'parse' ? '' : 'none';
   document.getElementById('tab-compare').style.display = tab === 'compare' ? '' : 'none';
   document.querySelectorAll('.tab')[tab === 'parse' ? 0 : 1].classList.add('active');
   // Sync AI toggle visual
   document.getElementById('ai-toggle-compare').className = 'toggle ' + (useAI ? 'on' : '');
+  if (updateHash !== false) {
+    window.history.replaceState(null, '', tab === 'compare' ? '/compare' : '/');
+  }
 }
+
+// Detect initial tab from URL
+function detectTab() {
+  const path = window.location.pathname;
+  if (path === '/compare') switchTab('compare', false);
+}
+
+// Handle browser back/forward
+window.addEventListener('popstate', () => {
+  detectTab();
+});
 
 // --- Toggle AI (updated for compare tab) ---
 const _origToggleAI = toggleAI;
