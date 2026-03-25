@@ -381,11 +381,6 @@ function renderCompareTable(results) {
   brands.forEach(b => { html += `<th>${esc(b)}</th>`; });
   html += '</tr></thead><tbody>';
 
-  // Count row for number of socials
-  html += '<tr><td>Кол-во соцсетей</td>';
-  results.forEach(r => { html += `<td>${r.socials.length}</td>`; });
-  html += '</tr>';
-
   // Platform rows
   const sums = results.map(() => 0);
   platforms.forEach(p => {
@@ -403,8 +398,13 @@ function renderCompareTable(results) {
     html += '</tr>';
   });
 
+  // Count row
+  html += '<tr class="compare-summary-row"><td>Кол-во соцсетей</td>';
+  results.forEach(r => { html += `<td>${r.socials.length}</td>`; });
+  html += '</tr>';
+
   // Sum row
-  html += '<tr><td>Всего подписчиков</td>';
+  html += '<tr class="compare-summary-row"><td>Всего подписчиков</td>';
   sums.forEach(s => { html += `<td>${formatFollowers(s)}</td>`; });
   html += '</tr>';
 
