@@ -453,9 +453,9 @@ function renderCompareTable(results) {
           const f = s.followers;
           if (f != null) sums[i] += f;
           const bot = s.is_bot === true ? ' <span class="bot-badge">bot</span>' : '';
-          html += `<td>${f != null ? formatFollowers(f) : '—'}${bot}</td>`;
+          html += `<td>${f != null ? formatFollowers(f) : 'да'}${bot}</td>`;
         } else {
-          html += '<td style="color:var(--text3)">—</td>';
+          html += '<td style="color:var(--text3)">нет</td>';
         }
       });
       html += '</tr>';
