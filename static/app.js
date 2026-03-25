@@ -317,7 +317,7 @@ async function runCompare() {
   document.getElementById('compare-result').innerHTML = `
     <div class="loading-box">
       <div class="spinner"></div>
-      <span>Сравниваем ${urls.length} сайтов...</span>
+      <span>Сравниваем ${urls.length} сайта...</span>
     </div>`;
 
   try {
