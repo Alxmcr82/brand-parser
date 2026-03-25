@@ -448,9 +448,7 @@ function renderCompareTable(results) {
 
   // Header row
   let html = '<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>Соцсеть</th>';
-  brands.forEach(b => { html += `<th colspan="2">${esc(b)}</th>`; });
-  html += '</tr><tr><th></th>';
-  brands.forEach(() => { html += '<th class="compare-subheader">Ссылка</th><th class="compare-subheader">Подписчики</th>'; });
+  brands.forEach(b => { html += `<th>${esc(b)}</th>`; });
   html += '</tr></thead><tbody>';
 
   // Platform rows — one row per entry (multiple rows if any brand has duplicates)
@@ -471,13 +469,12 @@ function renderCompareTable(results) {
           const f = s.followers;
           if (f != null) sums[i] += f;
           const bot = s.is_bot === true ? ' <span class="bot-badge">bot</span>' : '';
-          const shortUrl = s.url.replace(/^https?:\/\/(www\.)?/, '');
-          html += `<td><a class="social-link" href="${esc(s.url)}" target="_blank">${esc(shortUrl)}</a>${bot}</td>`;
-          html += `<td>${f != null ? formatFollowers(f) : '—'}</td>`;
+          const label = f != null ? formatFollowers(f) : 'да';
+          html += `<td><a class="compare-cell-link" href="${esc(s.url)}" target="_blank" title="${esc(s.url)}">${label}</a>${bot}</td>`;
         } else if (results[i].method === 'error' || results[i].socials.length === 0) {
-          html += '<td colspan="2" style="color:var(--danger)">Блокировка данных</td>';
+          html += '<td style="color:var(--danger)">Блокировка данных</td>';
         } else {
-          html += '<td colspan="2" style="color:var(--text3)">нет</td>';
+          html += '<td style="color:var(--text3)">нет</td>';
         }
       });
       html += '</tr>';
@@ -488,8 +485,8 @@ function renderCompareTable(results) {
   html += '<tr class="compare-summary-row"><td>Кол-во соцсетей</td>';
   results.forEach(r => {
     html += (r.method === 'error' || r.socials.length === 0)
-      ? '<td colspan="2" style="color:var(--danger)">—</td>'
-      : `<td colspan="2">${r.socials.length}</td>`;
+      ? '<td style="color:var(--danger)">—</td>'
+      : `<td>${r.socials.length}</td>`;
   });
   html += '</tr>';
 
@@ -497,8 +494,8 @@ function renderCompareTable(results) {
   html += '<tr class="compare-summary-row"><td>Всего подписчиков</td>';
   results.forEach((r, i) => {
     html += (r.method === 'error' || r.socials.length === 0)
-      ? '<td colspan="2" style="color:var(--danger)">—</td>'
-      : `<td colspan="2">${formatFollowers(sums[i])}</td>`;
+      ? '<td style="color:var(--danger)">—</td>'
+      : `<td>${formatFollowers(sums[i])}</td>`;
   });
   html += '</tr>';
 
