@@ -449,6 +449,8 @@ h1 span { color: var(--accent); }
   flex-shrink: 0;
 }
 
+.history-dot.compare-dot { background: #42b0f5; }
+
 .history-url {
   font-family: 'DM Mono', monospace;
   font-size: 12px;

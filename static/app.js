@@ -161,6 +161,17 @@ function addToHistory(data) {
   renderHistory();
 }
 
+function addCompareToHistory(results) {
+  history.unshift({
+    type: 'compare',
+    results: results.map(r => ({ url: r.url, socials: r.socials, method: r.method })),
+    ts: Date.now(),
+  });
+  if (history.length > 50) history = history.slice(0, 50);
+  saveHistory();
+  renderHistory();
+}
+
 function renderHistory() {
   const list = document.getElementById('history-list');
   const exportCSV = document.getElementById('export-csv-btn');
@@ -180,6 +191,18 @@ function renderHistory() {
     const date = new Date(item.ts).toLocaleString('ru', {
       day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
     });
+    if (item.type === 'compare') {
+      const domains = item.results.map(r => {
+        try { return new URL(r.url).hostname.replace('www.', ''); } catch { return r.url; }
+      });
+      return `
+        <div class="history-item" onclick="loadFromHistory(${i})">
+          <div class="history-dot compare-dot"></div>
+          <span class="history-url">${esc(domains.join(' vs '))}</span>
+          <span class="history-socials-count">сравнение</span>
+          <span class="history-meta">${esc(date)}</span>
+        </div>`;
+    }
     return `
       <div class="history-item" onclick="loadFromHistory(${i})">
         <div class="history-dot"></div>
@@ -192,8 +215,20 @@ function renderHistory() {
 
 function loadFromHistory(i) {
   const item = history[i];
-  document.getElementById('url-input').value = item.url;
-  renderResult(item);
+  if (item.type === 'compare') {
+    switchTab('compare');
+    item.results.forEach((r, idx) => {
+      document.getElementById(`compare-url-${idx + 1}`).value = r.url;
+    });
+    for (let j = item.results.length + 1; j <= 4; j++) {
+      document.getElementById(`compare-url-${j}`).value = '';
+    }
+    renderCompareTable(item.results);
+  } else {
+    switchTab('parse');
+    document.getElementById('url-input').value = item.url;
+    renderResult(item);
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -348,6 +383,7 @@ async function runCompare() {
 
     const results = await resp.json();
     renderCompareTable(results);
+    addCompareToHistory(results);
 
   } catch (e) {
     document.getElementById('compare-result').innerHTML =
