@@ -487,7 +487,7 @@ function renderCompareTable(results) {
           const label = f != null ? formatFollowers(f) : 'да';
           html += `<td><a class="compare-cell-link" href="${esc(s.url)}" target="_blank" title="${esc(s.url)}">${label}</a>${bot}</td>`;
         } else if (results[i].method === 'error' || results[i].socials.length === 0) {
-          html += '<td style="color:var(--danger)">Блокировка данных</td>';
+          html += '<td style="color:var(--danger)">Блокировка</td>';
         } else {
           html += '<td style="color:var(--text3)">нет</td>';
         }
