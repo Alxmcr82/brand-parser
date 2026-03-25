@@ -429,9 +429,13 @@ function renderCompareTable(results) {
     try { return new URL(r.url).hostname.replace('www.', ''); } catch { return r.url; }
   });
 
+  const colCount = brands.length;
+
   // Header row
   let html = '<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>Соцсеть</th>';
-  brands.forEach(b => { html += `<th>${esc(b)}</th>`; });
+  brands.forEach(b => { html += `<th colspan="2">${esc(b)}</th>`; });
+  html += '</tr><tr><th></th>';
+  brands.forEach(() => { html += '<th class="compare-subheader">Ссылка</th><th class="compare-subheader">Подписчики</th>'; });
   html += '</tr></thead><tbody>';
 
   // Platform rows — one row per entry (multiple rows if any brand has duplicates)
@@ -440,7 +444,6 @@ function renderCompareTable(results) {
     const maxCount = platformMax[p];
     for (let idx = 0; idx < maxCount; idx++) {
       html += '<tr>';
-      // Platform name only on first row, with rowspan if multiple
       if (idx === 0 && maxCount > 1) {
         html += `<td rowspan="${maxCount}">${esc(p)}</td>`;
       } else if (idx === 0) {
@@ -453,9 +456,11 @@ function renderCompareTable(results) {
           const f = s.followers;
           if (f != null) sums[i] += f;
           const bot = s.is_bot === true ? ' <span class="bot-badge">bot</span>' : '';
-          html += `<td>${f != null ? formatFollowers(f) : 'да'}${bot}</td>`;
+          const shortUrl = s.url.replace(/^https?:\/\/(www\.)?/, '');
+          html += `<td><a class="social-link" href="${esc(s.url)}" target="_blank">${esc(shortUrl)}</a>${bot}</td>`;
+          html += `<td>${f != null ? formatFollowers(f) : '—'}</td>`;
         } else {
-          html += '<td style="color:var(--text3)">нет</td>';
+          html += '<td style="color:var(--text3)">нет</td><td></td>';
         }
       });
       html += '</tr>';
@@ -464,12 +469,12 @@ function renderCompareTable(results) {
 
   // Count row
   html += '<tr class="compare-summary-row"><td>Кол-во соцсетей</td>';
-  results.forEach(r => { html += `<td>${r.socials.length}</td>`; });
+  results.forEach(r => { html += `<td colspan="2">${r.socials.length}</td>`; });
   html += '</tr>';
 
   // Sum row
   html += '<tr class="compare-summary-row"><td>Всего подписчиков</td>';
-  sums.forEach(s => { html += `<td>${formatFollowers(s)}</td>`; });
+  sums.forEach(s => { html += `<td colspan="2">${formatFollowers(s)}</td>`; });
   html += '</tr>';
 
   html += '</tbody></table></div>';
