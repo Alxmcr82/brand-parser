@@ -395,17 +395,34 @@ async function runCompare() {
 }
 
 function renderCompareTable(results) {
-  // Collect all unique platforms across all results
-  const allPlatforms = new Map(); // platform -> order index
+  // Group socials by platform for each result
+  const grouped = results.map(r => {
+    const map = {};
+    r.socials.forEach(s => {
+      if (!map[s.platform]) map[s.platform] = [];
+      map[s.platform].push(s);
+    });
+    return map;
+  });
+
+  // Collect all platforms in order, determine max entries per platform
+  const platformOrder = [];
+  const platformMax = {};
   results.forEach(r => {
     r.socials.forEach(s => {
-      if (!allPlatforms.has(s.platform)) {
-        allPlatforms.set(s.platform, allPlatforms.size);
+      if (!platformMax[s.platform]) {
+        platformOrder.push(s.platform);
+        platformMax[s.platform] = 0;
       }
     });
   });
-
-  const platforms = [...allPlatforms.keys()];
+  // dedupe platformOrder
+  const platforms = [...new Set(platformOrder)];
+  platforms.forEach(p => {
+    grouped.forEach(g => {
+      platformMax[p] = Math.max(platformMax[p], (g[p] || []).length);
+    });
+  });
 
   // Build brand labels from URL domains
   const brands = results.map(r => {
@@ -417,21 +434,32 @@ function renderCompareTable(results) {
   brands.forEach(b => { html += `<th>${esc(b)}</th>`; });
   html += '</tr></thead><tbody>';
 
-  // Platform rows
+  // Platform rows — one row per entry (multiple rows if any brand has duplicates)
   const sums = results.map(() => 0);
   platforms.forEach(p => {
-    html += `<tr><td>${esc(p)}</td>`;
-    results.forEach((r, i) => {
-      const s = r.socials.find(x => x.platform === p);
-      if (s) {
-        const f = s.followers;
-        if (f != null) sums[i] += f;
-        html += `<td>${f != null ? formatFollowers(f) : '—'}</td>`;
-      } else {
-        html += '<td style="color:var(--text3)">—</td>';
+    const maxCount = platformMax[p];
+    for (let idx = 0; idx < maxCount; idx++) {
+      html += '<tr>';
+      // Platform name only on first row, with rowspan if multiple
+      if (idx === 0 && maxCount > 1) {
+        html += `<td rowspan="${maxCount}">${esc(p)}</td>`;
+      } else if (idx === 0) {
+        html += `<td>${esc(p)}</td>`;
       }
-    });
-    html += '</tr>';
+      grouped.forEach((g, i) => {
+        const entries = g[p] || [];
+        const s = entries[idx];
+        if (s) {
+          const f = s.followers;
+          if (f != null) sums[i] += f;
+          const bot = s.is_bot === true ? ' <span class="bot-badge">bot</span>' : '';
+          html += `<td>${f != null ? formatFollowers(f) : '—'}${bot}</td>`;
+        } else {
+          html += '<td style="color:var(--text3)">—</td>';
+        }
+      });
+      html += '</tr>';
+    }
   });
 
   // Count row
