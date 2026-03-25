@@ -237,6 +237,7 @@ function clearHistory() {
   saveHistory();
   renderHistory();
   document.getElementById('result-section').innerHTML = '';
+  document.getElementById('compare-result').innerHTML = '';
 }
 
 function saveHistory() {
@@ -493,5 +494,73 @@ function renderCompareTable(results) {
 
   html += '</tbody></table></div>';
 
+  html += `<div class="export-bar" style="margin-top:16px;">
+    <button class="export-btn" onclick="exportCompareCSV()">↓ CSV</button>
+    <button class="export-btn" onclick="exportCompareJSON()">↓ JSON</button>
+  </div>`;
+
   document.getElementById('compare-result').innerHTML = html;
+  window._lastCompare = results;
+}
+
+function exportCompareCSV() {
+  const results = window._lastCompare;
+  if (!results) return;
+  const brands = results.map(r => {
+    try { return new URL(r.url).hostname.replace('www.', ''); } catch { return r.url; }
+  });
+
+  // Header
+  const header = ['Платформа'];
+  brands.forEach(b => { header.push(b + ' — Ссылка', b + ' — Подписчики'); });
+  const rows = [header];
+
+  // All platforms
+  const allPlatforms = [];
+  results.forEach(r => r.socials.forEach(s => {
+    if (!allPlatforms.includes(s.platform)) allPlatforms.push(s.platform);
+  }));
+
+  // Group
+  const grouped = results.map(r => {
+    const map = {};
+    r.socials.forEach(s => {
+      if (!map[s.platform]) map[s.platform] = [];
+      map[s.platform].push(s);
+    });
+    return map;
+  });
+
+  allPlatforms.forEach(p => {
+    const maxCount = Math.max(...grouped.map(g => (g[p] || []).length));
+    for (let idx = 0; idx < maxCount; idx++) {
+      const row = [p + (idx > 0 ? ` (${idx + 1})` : '')];
+      grouped.forEach(g => {
+        const s = (g[p] || [])[idx];
+        row.push(s ? s.url : '', s && s.followers != null ? s.followers : '');
+      });
+      rows.push(row);
+    }
+  });
+
+  // Summary
+  const countRow = ['Кол-во соцсетей'];
+  const sumRow = ['Всего подписчиков'];
+  results.forEach(r => {
+    countRow.push(r.socials.length, '');
+    const sum = r.socials.reduce((a, s) => a + (s.followers || 0), 0);
+    sumRow.push(sum, '');
+  });
+  rows.push(countRow, sumRow);
+
+  const csv = rows.map(r =>
+    r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+  download('\uFEFF' + csv, 'compare-export.csv', 'text/csv');
+}
+
+function exportCompareJSON() {
+  const results = window._lastCompare;
+  if (!results) return;
+  download(JSON.stringify(results, null, 2), 'compare-export.json', 'application/json');
 }

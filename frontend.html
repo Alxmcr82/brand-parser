@@ -68,27 +68,6 @@
 
     <!-- Result -->
     <div class="result-section" id="result-section"></div>
-
-    <!-- History -->
-    <div class="history-section">
-      <div class="section-header">
-        <span class="section-title">История</span>
-        <button class="clear-btn" onclick="clearHistory()">Очистить</button>
-      </div>
-
-      <div class="export-bar">
-        <button class="export-btn" id="export-csv-btn" onclick="exportCSV()" disabled>
-          ↓ CSV
-        </button>
-        <button class="export-btn" id="export-json-btn" onclick="exportJSON()" disabled>
-          ↓ JSON
-        </button>
-      </div>
-
-      <div style="margin-top: 12px;">
-        <div class="history-list" id="history-list"></div>
-      </div>
-    </div>
   </div>
 
   <!-- Tab: Compare -->
@@ -111,6 +90,27 @@
     </div>
 
     <div id="compare-result"></div>
+  </div>
+
+  <!-- History (shared) -->
+  <div class="history-section">
+    <div class="section-header">
+      <span class="section-title">История</span>
+      <button class="clear-btn" onclick="clearHistory()">Очистить</button>
+    </div>
+
+    <div class="export-bar">
+      <button class="export-btn" id="export-csv-btn" onclick="exportCSV()" disabled>
+        ↓ CSV
+      </button>
+      <button class="export-btn" id="export-json-btn" onclick="exportJSON()" disabled>
+        ↓ JSON
+      </button>
+    </div>
+
+    <div style="margin-top: 12px;">
+      <div class="history-list" id="history-list"></div>
+    </div>
   </div>
 
 </div>
