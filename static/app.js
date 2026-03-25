@@ -477,7 +477,7 @@ function renderCompareTable(results) {
         } else if (results[i].method === 'error') {
           html += '<td colspan="2" style="color:var(--danger)">Блокировка данных</td>';
         } else {
-          html += '<td style="color:var(--text3)">нет</td><td></td>';
+          html += '<td colspan="2" style="color:var(--text3)">нет</td>';
         }
       });
       html += '</tr>';
