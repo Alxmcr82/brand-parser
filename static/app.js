@@ -345,6 +345,20 @@ async function runCompare() {
     return;
   }
 
+  // Check for duplicates by domain
+  const domains = urls.map(u => {
+    try { return new URL(u.startsWith('http') ? u : 'https://' + u).hostname.replace('www.', ''); } catch { return u; }
+  });
+  const seen = new Set();
+  for (const d of domains) {
+    if (seen.has(d)) {
+      document.getElementById('compare-result').innerHTML =
+        `<div class="error-box">Домен ${esc(d)} указан дважды</div>`;
+      return;
+    }
+    seen.add(d);
+  }
+
   const btn = document.getElementById('compare-btn');
   btn.disabled = true;
   btn.textContent = '...';
