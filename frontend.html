@@ -35,52 +35,82 @@
     </div>
   </header>
 
-  <!-- Parse box -->
-  <p class="parse-hint">Введите URL компании, чтобы получить описание и ссылки на социальные сети</p>
-  <div class="parse-box">
-    <div class="input-row">
-      <input
-        class="url-input"
-        id="url-input"
-        type="text"
-        placeholder="https://example.com"
-        autocomplete="off"
-        spellcheck="false"
-      />
-      <button class="parse-btn" id="parse-btn" onclick="runParse()">Парсить</button>
-    </div>
-    <div class="options-row">
-      <label class="toggle-label" onclick="toggleAI()">
-        <div class="toggle" id="ai-toggle"></div>
-        Использовать AI
-      </label>
-      <span class="api-url-hint" id="api-url-hint">api → auto</span>
-    </div>
-    <p class="how-it-works-link"><a href="/how" target="_blank">Как это работает?</a></p>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('parse')">Парсинг</button>
+    <button class="tab" onclick="switchTab('compare')">Сравнение</button>
   </div>
 
-  <!-- Result -->
-  <div class="result-section" id="result-section"></div>
-
-  <!-- History -->
-  <div class="history-section">
-    <div class="section-header">
-      <span class="section-title">История</span>
-      <button class="clear-btn" onclick="clearHistory()">Очистить</button>
+  <!-- Tab: Parse -->
+  <div class="tab-content" id="tab-parse">
+    <p class="parse-hint">Введите URL компании, чтобы получить описание и ссылки на социальные сети</p>
+    <div class="parse-box">
+      <div class="input-row">
+        <input
+          class="url-input"
+          id="url-input"
+          type="text"
+          placeholder="https://example.com"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button class="parse-btn" id="parse-btn" onclick="runParse()">Парсить</button>
+      </div>
+      <div class="options-row">
+        <label class="toggle-label" onclick="toggleAI()">
+          <div class="toggle" id="ai-toggle"></div>
+          Использовать AI
+        </label>
+        <span class="api-url-hint" id="api-url-hint">api → auto</span>
+      </div>
+      <p class="how-it-works-link"><a href="/how" target="_blank">Как это работает?</a></p>
     </div>
 
-    <div class="export-bar">
-      <button class="export-btn" id="export-csv-btn" onclick="exportCSV()" disabled>
-        ↓ CSV
-      </button>
-      <button class="export-btn" id="export-json-btn" onclick="exportJSON()" disabled>
-        ↓ JSON
-      </button>
+    <!-- Result -->
+    <div class="result-section" id="result-section"></div>
+
+    <!-- History -->
+    <div class="history-section">
+      <div class="section-header">
+        <span class="section-title">История</span>
+        <button class="clear-btn" onclick="clearHistory()">Очистить</button>
+      </div>
+
+      <div class="export-bar">
+        <button class="export-btn" id="export-csv-btn" onclick="exportCSV()" disabled>
+          ↓ CSV
+        </button>
+        <button class="export-btn" id="export-json-btn" onclick="exportJSON()" disabled>
+          ↓ JSON
+        </button>
+      </div>
+
+      <div style="margin-top: 12px;">
+        <div class="history-list" id="history-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Compare -->
+  <div class="tab-content" id="tab-compare" style="display:none;">
+    <p class="parse-hint">Введите до 4 URL для сравнения брендов по соцсетям и подписчикам</p>
+    <div class="parse-box">
+      <div class="compare-inputs">
+        <input class="url-input" id="compare-url-1" type="text" placeholder="https://brand1.com" autocomplete="off" spellcheck="false" />
+        <input class="url-input" id="compare-url-2" type="text" placeholder="https://brand2.com" autocomplete="off" spellcheck="false" />
+        <input class="url-input" id="compare-url-3" type="text" placeholder="https://brand3.com" autocomplete="off" spellcheck="false" />
+        <input class="url-input" id="compare-url-4" type="text" placeholder="https://brand4.com" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="options-row">
+        <label class="toggle-label" onclick="toggleAI()">
+          <div class="toggle" id="ai-toggle-compare"></div>
+          Использовать AI
+        </label>
+        <button class="parse-btn" id="compare-btn" onclick="runCompare()">Сравнить</button>
+      </div>
     </div>
 
-    <div style="margin-top: 12px;">
-      <div class="history-list" id="history-list"></div>
-    </div>
+    <div id="compare-result"></div>
   </div>
 
 </div>

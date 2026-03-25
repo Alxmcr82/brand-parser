@@ -549,6 +549,98 @@ h1 span { color: var(--accent); }
   min-height: 18px;
 }
 
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text3);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.tab:hover { color: var(--text2); }
+.tab.active { background: var(--accent); color: #0d0d0d; }
+
+/* Compare inputs */
+.compare-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+/* Compare table */
+.compare-table-wrap {
+  overflow-x: auto;
+  animation: slideIn 0.25s ease;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.compare-table th,
+.compare-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.compare-table th {
+  background: var(--bg3);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.compare-table td {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.compare-table td:first-child {
+  color: var(--text2);
+  font-weight: 600;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+}
+
+.compare-table tr:last-child td {
+  border-bottom: none;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.compare-table tr:last-child td:first-child {
+  color: var(--accent);
+}
+
 /* Mobile */
 @media (max-width: 600px) {
   .container { padding: 24px 12px; }
@@ -561,4 +653,6 @@ h1 span { color: var(--accent); }
   .social-link { max-width: 100%; }
   .result-url { max-width: 200px; }
   .result-export-bar { padding: 12px 16px; }
+  .compare-table th, .compare-table td { padding: 8px 10px; font-size: 11px; }
+  .compare-inputs { gap: 6px; }
 }

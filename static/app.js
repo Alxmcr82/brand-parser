@@ -278,3 +278,137 @@ function download(content, filename, type) {
   a.download = filename;
   a.click();
 }
+
+// --- Tabs ---
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-parse').style.display = tab === 'parse' ? '' : 'none';
+  document.getElementById('tab-compare').style.display = tab === 'compare' ? '' : 'none';
+  document.querySelectorAll('.tab')[tab === 'parse' ? 0 : 1].classList.add('active');
+  // Sync AI toggle visual
+  document.getElementById('ai-toggle-compare').className = 'toggle ' + (useAI ? 'on' : '');
+}
+
+// --- Toggle AI (updated for compare tab) ---
+const _origToggleAI = toggleAI;
+toggleAI = function() {
+  useAI = !useAI;
+  document.getElementById('ai-toggle').className = 'toggle ' + (useAI ? 'on' : '');
+  document.getElementById('ai-toggle-compare').className = 'toggle ' + (useAI ? 'on' : '');
+};
+
+// --- Compare ---
+async function runCompare() {
+  const urls = [];
+  for (let i = 1; i <= 4; i++) {
+    const v = document.getElementById(`compare-url-${i}`).value.trim();
+    if (v) urls.push(v);
+  }
+  if (urls.length < 2) {
+    document.getElementById('compare-result').innerHTML =
+      '<div class="error-box">Введите минимум 2 URL для сравнения</div>';
+    return;
+  }
+
+  const btn = document.getElementById('compare-btn');
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  document.getElementById('compare-result').innerHTML = `
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <span>Сравниваем ${urls.length} сайтов...</span>
+    </div>`;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 180000);
+    const resp = await fetch(`${API_BASE}/parse/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ urls, use_ai: useAI, access_key: accessKey }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!resp.ok) {
+      const data = await resp.json();
+      if (resp.status === 403 && (data.detail || '').includes('ключ')) {
+        localStorage.removeItem('bp_access_key');
+        accessKey = '';
+        document.getElementById('main-container').style.display = 'none';
+        document.getElementById('access-gate').style.display = '';
+        document.getElementById('access-error').textContent = 'Неверный ключ доступа';
+        return;
+      }
+      document.getElementById('compare-result').innerHTML =
+        `<div class="error-box">${esc(data.detail || 'Ошибка')}</div>`;
+      return;
+    }
+
+    const results = await resp.json();
+    renderCompareTable(results);
+
+  } catch (e) {
+    document.getElementById('compare-result').innerHTML =
+      '<div class="error-box">Не удалось подключиться к API</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Сравнить';
+  }
+}
+
+function renderCompareTable(results) {
+  // Collect all unique platforms across all results
+  const allPlatforms = new Map(); // platform -> order index
+  results.forEach(r => {
+    r.socials.forEach(s => {
+      if (!allPlatforms.has(s.platform)) {
+        allPlatforms.set(s.platform, allPlatforms.size);
+      }
+    });
+  });
+
+  const platforms = [...allPlatforms.keys()];
+
+  // Build brand labels from URL domains
+  const brands = results.map(r => {
+    try { return new URL(r.url).hostname.replace('www.', ''); } catch { return r.url; }
+  });
+
+  // Header row
+  let html = '<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>Соцсеть</th>';
+  brands.forEach(b => { html += `<th>${esc(b)}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  // Count row for number of socials
+  html += '<tr><td>Кол-во соцсетей</td>';
+  results.forEach(r => { html += `<td>${r.socials.length}</td>`; });
+  html += '</tr>';
+
+  // Platform rows
+  const sums = results.map(() => 0);
+  platforms.forEach(p => {
+    html += `<tr><td>${esc(p)}</td>`;
+    results.forEach((r, i) => {
+      const s = r.socials.find(x => x.platform === p);
+      if (s) {
+        const f = s.followers;
+        if (f != null) sums[i] += f;
+        html += `<td>${f != null ? formatFollowers(f) : '—'}</td>`;
+      } else {
+        html += '<td style="color:var(--text3)">—</td>';
+      }
+    });
+    html += '</tr>';
+  });
+
+  // Sum row
+  html += '<tr><td>Всего подписчиков</td>';
+  sums.forEach(s => { html += `<td>${formatFollowers(s)}</td>`; });
+  html += '</tr>';
+
+  html += '</tbody></table></div>';
+
+  document.getElementById('compare-result').innerHTML = html;
+}
